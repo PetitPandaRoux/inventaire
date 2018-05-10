@@ -22,7 +22,7 @@ getParams = (filename, body, type = 'application/json')->
       'X-Auth-Token': token
     body: body
 
-action = (verb, filename, body, type)->
+action = (verb)-> (filename, body, type)->
   getParams filename, body, type
   .then _.Log('params')
   .then breq[verb]
@@ -30,9 +30,11 @@ action = (verb, filename, body, type)->
   .then _.Log("#{verb} #{filename} body")
   .catch _.ErrorRethrow("#{verb} #{filename}")
 
-actions = {}
-[ 'get', 'post', 'put', 'delete' ].forEach (verb)->
-  actions[verb] = action.bind null, verb
+actions =
+  get: action 'get'
+  post: action 'post'
+  put: action 'put'
+  delete: action 'delete'
 
 module.exports = _.extend actions,
   # inspired by https://github.com/Automattic/knox/blob/master/lib/client.js
@@ -46,12 +48,6 @@ module.exports = _.extend actions,
       _.extend headers, additionalHeaders
       new Promise (resolve, reject)->
         fs_.createReadStream path
-        .pipe request(requestParams(url, headers))
+        .pipe request({ method: 'PUT', url, headers })
         .on 'error', reject
         .on 'end', resolve.bind(null, relativeUrl(filename))
-
-requestParams = (url, headers)->
-  req =
-    method: 'PUT'
-    url: url
-    headers: headers

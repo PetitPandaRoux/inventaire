@@ -9,6 +9,9 @@ promises_ = __.require 'lib', 'promises'
 # Swift: v1
 
 { username, password, authUrl, tenantName, region, publicURL } = require('config').swift
+auth =
+  passwordCredentials: { username, password }
+  tenantName: tenantName
 breq = require 'bluereq'
 
 lastToken = null
@@ -17,21 +20,15 @@ lastTokenExpirationTime = 0
 tokenExpired = -> Date.now() > (lastTokenExpirationTime - tenMinutes)
 
 module.exports = ->
-  if lastToken? and not tokenExpired() then promises_.resolve lastToken
-  else
-    breq.post
-      url: "#{authUrl}/tokens"
-      headers:
-        'Content-Type': 'application/json'
-      body:
-        auth:
-          passwordCredentials:
-            username: username
-            password: password
-          tenantName: tenantName
-    .get 'body'
-    .then parseIdentificationRes
-    .catch _.ErrorRethrow('getToken')
+  if lastToken? and not tokenExpired() then return promises_.resolve lastToken
+
+  breq.post
+    url: "#{authUrl}/tokens"
+    headers: { 'Content-Type': 'application/json' }
+    body: { auth }
+  .get 'body'
+  .then parseIdentificationRes
+  .catch _.ErrorRethrow('getToken')
 
 parseIdentificationRes = (res)->
   { token, serviceCatalog } = res.access
