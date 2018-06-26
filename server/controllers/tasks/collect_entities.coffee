@@ -13,12 +13,16 @@ keepNewTasks = require './lib/keep_new_tasks'
 { interval } = CONFIG.jobs['inv:deduplicate']
 
 module.exports = (req, res)->
-  addEntitiesToQueue()
+  { refresh } = req.query
+  addEntitiesToQueue refresh
   .then responses_.Ok(res)
   .catch error_.Handler(req, res)
 
-addEntitiesToQueue = ->
+addEntitiesToQueue = (refresh) ->
   getInvHumanUris()
+  .then (uris)->
+    if refresh then uris
+    else filterNotAlreadySuspectEntities(uris)
   .then invTasksEntitiesQueue.pushBatch
   .catch _.ErrorRethrow('addEntitiesToQueue err')
 
@@ -43,5 +47,11 @@ deduplicateWorker = (jobId, uri, cb)->
     else
       _.error err, 'deduplicateWorker err'
       throw err
+
+filterNotAlreadySuspectEntities = (uris)->
+  tasks_.bySuspectUris uris
+  .then (res)->
+    alreadyCheckedUris = _.pluck(res.rows, 'suspectUri')
+    _.difference(uris, alreadyCheckedUris)
 
 invTasksEntitiesQueue = jobs_.initQueue 'inv:deduplicate', deduplicateWorker, 1
