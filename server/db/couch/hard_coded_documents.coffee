@@ -16,3 +16,8 @@ module.exports =
       special: true
       # Data required to avoid crashing users logic
       snapshot:  {}
+    reconciler:
+      _id: '00000000000000000000000000000002'
+      username: 'reconciler'
+      special: true
+      snapshot:  {}
