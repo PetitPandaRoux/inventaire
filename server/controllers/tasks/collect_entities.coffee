@@ -51,7 +51,7 @@ deduplicateWorker = (jobId, uri, cb)->
 filterNotAlreadySuspectEntities = (uris)->
   tasks_.bySuspectUris uris
   .then (res)->
-    alreadyCheckedUris = _.pluck(res.rows, 'suspectUri')
-    _.difference(uris, alreadyCheckedUris)
+    alreadyCheckedUris = _.pluck res.rows, 'suspectUri'
+    return _.difference uris, alreadyCheckedUris
 
 invTasksEntitiesQueue = jobs_.initQueue 'inv:deduplicate', deduplicateWorker, 1
